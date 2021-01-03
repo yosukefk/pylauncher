@@ -21,4 +21,7 @@ The example uses 4 cores for each task (first field), and secnod field shows dep
 ### What was done
 * Modified `Commandline` class to be like and observer pattern, registering itself to depedent Commandline object.  
 * `Task` class holds on to `Commandline` object, and upon completion it notifies subscribers which are depnding other `Commandline` object, to clear the flag.  
-* `CommandlineGenerator` does not yield Commandline whose dependency is not cleared, and yield "stall" instead if there is nothing to provide
+* `CommandlineGenerator` does not yield `Commandline` whose dependency is not cleared, and yield "stall" instead if there is nothing to provide
+
+### Disclaimer
+Not thoroughly tested, and most likely be tested for only the primary user's (= my) requrement.
