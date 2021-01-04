@@ -72,7 +72,14 @@ import subprocess
 import sys
 import time
 import hostlist3 as hs
-import networkx as nx
+try:
+    import networkx as nx
+    has_nx = True
+    print('has_nx')
+#except ImportError:
+except ModuleNotFoundError:
+    has_nx = False
+    print('no_nx')
 
 class LauncherException(Exception):
     """A very basic exception mechanism"""
@@ -385,6 +392,13 @@ class DependenciesCommandlineGenerator(CommandlineGenerator):
         return lst
 
     def checkDAG(self,lst):
+        if not has_nx:
+            # at least check that all nodes are Comandline
+            nodes = []
+            for cmd in lst:
+                nodes.extend(cmd.data['dependencies'])
+            assert all(_ in lst for _ in nodes)
+            return True
         g = nx.DiGraph()
         g.add_nodes_from(lst)
         for cmd in lst:
@@ -397,7 +411,7 @@ class DependenciesCommandlineGenerator(CommandlineGenerator):
         for i,cmd in enumerate(self.list):
             if not cmd.data['dependencies']:
                 j = cmd
-                self.list.pop(i)
+                self.list = self.list[:i] + self.list[i+1:]
                 print("Popping command off list[%d] <<%s>>" % (i, str(j)))
                 self.njobs += 1; return j
         # nothing is ready to be poppod
