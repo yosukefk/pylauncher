@@ -72,6 +72,7 @@ import subprocess
 import sys
 import time
 import hostlist3 as hs
+import networkx as nx
 
 class LauncherException(Exception):
     """A very basic exception mechanism"""
@@ -369,11 +370,29 @@ class DependenciesCommandlineGenerator(CommandlineGenerator):
         for cmd in lst:
             dep = cmd.data.get('dependencies', None)
             assert isinstance(dep, str)
-            if len(dep) > 0:
-                idx = int(dep)
+            if len(dep.strip()) > 0:
+                idx = int(dep.strip())
                 lst[idx].register(cmd)
                 cmd.data['dependencies'] = [lst[idx]]
+            else:
+                # empty or all blank string
+                cmd.data['dependencies'] = []
+
+        if not self.checkDAG(lst):
+            raise LauncherException("dependncies tree is cyclic")
+        ready_to_queue = [cmd for cmd in lst if not cmd.data['dependencies']]
+        print(f"Total {len(lst)} commands, {len(ready_to_queue)} has no dependency")
         return lst
+
+    def checkDAG(self,lst):
+        g = nx.DiGraph()
+        g.add_nodes_from(lst)
+        for cmd in lst:
+            g.add_edges_from([(cmd,_) for _ in cmd.data['dependencies']])
+        # we should be dealing with only the commands listed
+        assert all(_ in lst for _ in g.nodes())
+        return nx.algorithms.dag.is_directed_acyclic_graph(g)
+
     def _popCommand(self):
         for i,cmd in enumerate(self.list):
             if not cmd.data['dependencies']:
